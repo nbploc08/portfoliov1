@@ -4,404 +4,105 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
+generator client {
+  provider = "prisma-client-js"
+}
+
 // ========== ENUMS ==========
-enum UserRole {
-  ADMIN
-  STAFF
+enum Role {
   USER
+  ADMIN
 }
 
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
-}
-
-enum PaymentStatus {
-  PENDING
-  PAID
-  PARTIAL
-  REFUNDED
-}
-
-enum TransactionType {
-  IN
-  OUT
-  ADJUSTMENT
+enum AlertCondition {
+  GT
+  LT
 }
 
 // ========== MODELS ==========
 
-// 1. Categories (Thể loại)
-model Category {
-  id          Int       @id @default(autoincrement())
-  name        String    @db.VarChar(100)
-  description String?   @db.Text
-  imageUrl    String?   @map("image_url") @db.VarChar(500)
-  isActive    Boolean   @default(true) @map("is_active")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  // Relations
-  products    Product[]
-
-  @@map("categories")
-}
-
-// 2. Products (Sản phẩm)
-model Product {
-  id            Int       @id @default(autoincrement())
-  categoryId    Int       @map("category_id")
-  name          String    @db.VarChar(200)
-  code          String    @unique @db.VarChar(50)
-  description   String?   @db.Text
-  originalPrice Decimal   @map("original_price") @db.Decimal(10, 2)
-  salePrice     Decimal   @map("sale_price") @db.Decimal(10, 2)
-  purchaseCount Int       @default(0) @map("purchase_count")
-  isActive      Boolean   @default(true) @map("is_active")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-
-  // Relations
-  category              Category              @relation(fields: [categoryId], references: [id])
-  images                ProductImage[]
-  productTags           ProductTag[]
-  productSuppliers      ProductSupplier[]
-  inventory             Inventory?
-  inventoryTransactions InventoryTransaction[]
-  comments              Comment[]
-  purchaseOrderItems    PurchaseOrderItem[]
-  salesOrderItems       SalesOrderItem[]
-
-  @@index([categoryId])
-  @@index([code])
-  @@map("products")
-}
-
-// 3. Product_Images (Hình ảnh sản phẩm)
-model ProductImage {
-  id         Int      @id @default(autoincrement())
-  productId  Int      @map("product_id")
-  imageUrl   String   @map("image_url") @db.VarChar(500)
-  isPrimary  Boolean  @default(false) @map("is_primary")
-  sortOrder  Int      @default(0) @map("sort_order")
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  // Relations
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([productId])
-  @@map("product_images")
-}
-
-// 4. Tags (Thẻ)
-model Tag {
-  id         Int      @id @default(autoincrement())
-  name       String   @unique @db.VarChar(50)
-  type       String?  @db.VarChar(30)
-  usageCount Int      @default(0) @map("usage_count")
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  // Relations
-  productTags ProductTag[]
-
-  @@map("tags")
-}
-
-// 5. Product_Tags (Liên kết sản phẩm - thẻ)
-model ProductTag {
-  id        Int      @id @default(autoincrement())
-  productId Int      @map("product_id")
-  tagId     Int      @map("tag_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  // Relations
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, tagId])
-  @@index([productId])
-  @@index([tagId])
-  @@map("product_tags")
-}
-
-// 6. Suppliers (Nhà cung cấp)
-model Supplier {
-  id            Int      @id @default(autoincrement())
-  name          String   @db.VarChar(200)
-  code          String   @unique @db.VarChar(50)
-  address       String?  @db.Text
-  phone         String?  @db.VarChar(20)
-  email         String?  @db.VarChar(100)
-  taxCode       String?  @map("tax_code") @db.VarChar(50)
-  contactPerson String?  @map("contact_person") @db.VarChar(100)
-  rating        Decimal? @db.Decimal(3, 2)
-  paymentTerms  String?  @map("payment_terms") @db.Text
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  productSuppliers ProductSupplier[]
-  purchaseOrders   PurchaseOrder[]
-
-  @@index([code])
-  @@map("suppliers")
-}
-
-// 7. Product_Suppliers (Liên kết sản phẩm - nhà cung cấp)
-model ProductSupplier {
-  id            Int      @id @default(autoincrement())
-  productId     Int      @map("product_id")
-  supplierId    Int      @map("supplier_id")
-  purchasePrice Decimal  @map("purchase_price") @db.Decimal(10, 2)
-  leadTime      Int?     @map("lead_time") // số ngày giao hàng
-  isPreferred   Boolean  @default(false) @map("is_preferred")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, supplierId])
-  @@index([productId])
-  @@index([supplierId])
-  @@map("product_suppliers")
-}
-
-// 8. Users (Người dùng)
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique @db.VarChar(100)
-  username  String   @unique @db.VarChar(50)
-  password  String   @db.VarChar(255)
-  fullName  String?  @map("full_name") @db.VarChar(100)
-  address   String?  @db.Text
-  phone     String?  @db.VarChar(20)
-  role      UserRole @default(USER)
-  avatarUrl String?  @map("avatar_url") @db.VarChar(500)
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+  role     Role   @default(USER)
 
-  // Relations
-  staff       Staff?
-  comments    Comment[]
-  salesOrders SalesOrder[]
+  portfolios Portfolio[]
+  alerts     Alert[]
 
-  @@index([email])
-  @@index([username])
-  @@map("users")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-// 9. Staff (Nhân viên)
-model Staff {
-  id           Int      @id @default(autoincrement())
-  userId       Int      @unique @map("user_id")
-  employeeCode String   @unique @map("employee_code") @db.VarChar(20)
-  department   String?  @db.VarChar(50)
-  position     String?  @db.VarChar(50)
-  hireDate     DateTime @map("hire_date")
-  salary       Decimal? @db.Decimal(10, 2)
-  managerId    Int?     @map("manager_id")
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+model Portfolio {
+  id   String @id @default(uuid())
+  name String
 
-  // Relations
-  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  manager               Staff?                @relation("StaffManager", fields: [managerId], references: [id])
-  subordinates          Staff[]               @relation("StaffManager")
-  purchaseOrders        PurchaseOrder[]
-  salesOrders           SalesOrder[]
-  inventoryTransactions InventoryTransaction[]
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  @@index([employeeCode])
-  @@map("staff")
+  assets PortfolioAsset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-// 10. Purchase_Orders (Đơn nhập hàng)
-model PurchaseOrder {
-  id               Int           @id @default(autoincrement())
-  orderCode        String        @unique @map("order_code") @db.VarChar(50)
-  supplierId       Int           @map("supplier_id")
-  staffId          Int           @map("staff_id")
-  orderDate        DateTime      @map("order_date")
-  expectedDelivery DateTime?     @map("expected_delivery")
-  totalAmount      Decimal       @map("total_amount") @db.Decimal(10, 2)
-  status           OrderStatus   @default(PENDING)
-  notes            String?       @db.Text
-  createdAt        DateTime      @default(now()) @map("created_at")
-  updatedAt        DateTime      @updatedAt @map("updated_at")
+model Token {
+  id     String @id @default(uuid())
+  symbol String @unique
+  name   String
 
-  // Relations
-  supplier         Supplier            @relation(fields: [supplierId], references: [id])
-  staff            Staff               @relation(fields: [staffId], references: [id])
-  items            PurchaseOrderItem[]
+  assets PortfolioAsset[]
+  prices TokenPrice[]
+  alerts Alert[]
 
-  @@index([orderCode])
-  @@index([supplierId])
-  @@index([staffId])
-  @@map("purchase_orders")
+  createdAt DateTime @default(now())
 }
 
-// 11. Purchase_Order_Items (Chi tiết đơn nhập)
-model PurchaseOrderItem {
-  id              Int      @id @default(autoincrement())
-  purchaseOrderId Int      @map("purchase_order_id")
-  productId       Int      @map("product_id")
-  quantity        Int
-  unitPrice       Decimal  @map("unit_price") @db.Decimal(10, 2)
-  totalPrice      Decimal  @map("total_price") @db.Decimal(10, 2)
-  receivedQty     Int      @default(0) @map("received_qty")
-  createdAt       DateTime @default(now()) @map("created_at")
+model PortfolioAsset {
+  id String @id @default(uuid())
 
-  // Relations
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  product         Product       @relation(fields: [productId], references: [id])
+  portfolioId String
+  tokenId     String
 
-  @@index([purchaseOrderId])
-  @@index([productId])
-  @@map("purchase_order_items")
+  amount Float
+
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id])
+  token     Token     @relation(fields: [tokenId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([portfolioId, tokenId])
 }
 
-// 12. Inventory (Tồn kho)
-model Inventory {
-  id          Int      @id @default(autoincrement())
-  productId   Int      @unique @map("product_id")
-  currentQty  Int      @default(0) @map("current_qty")
-  minQty      Int      @default(0) @map("min_qty")
-  maxQty      Int?     @map("max_qty")
-  location    String?  @db.VarChar(100)
-  lastUpdated DateTime @default(now()) @map("last_updated")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+model TokenPrice {
+  id    String @id @default(uuid())
+  price Float
 
-  // Relations
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tokenId String
+  token   Token  @relation(fields: [tokenId], references: [id])
 
-  @@map("inventory")
+  createdAt DateTime @default(now())
 }
 
-// 13. Inventory_Transactions (Giao dịch kho)
-model InventoryTransaction {
-  id              Int             @id @default(autoincrement())
-  productId       Int             @map("product_id")
-  transactionType TransactionType @map("transaction_type")
-  quantity        Int
-  referenceType   String?         @map("reference_type") @db.VarChar(50)
-  referenceId     Int?            @map("reference_id")
-  staffId         Int             @map("staff_id")
-  notes           String?         @db.Text
-  createdAt       DateTime        @default(now()) @map("created_at")
+model Alert {
+  id          String         @id @default(uuid())
+  condition   AlertCondition
+  targetPrice Float
+  isTriggered Boolean        @default(false)
 
-  // Relations
-  product         Product         @relation(fields: [productId], references: [id])
-  staff           Staff           @relation(fields: [staffId], references: [id])
+  userId  String
+  tokenId String
 
-  @@index([productId])
-  @@index([staffId])
-  @@map("inventory_transactions")
-}
+  user  User  @relation(fields: [userId], references: [id])
+  token Token @relation(fields: [tokenId], references: [id])
 
-// 14. Sales_Orders (Đơn bán hàng)
-model SalesOrder {
-  id              Int           @id @default(autoincrement())
-  orderCode       String        @unique @map("order_code") @db.VarChar(50)
-  customerId      Int           @map("customer_id")
-  staffId         Int           @map("staff_id")
-  orderDate       DateTime      @map("order_date")
-  deliveryAddress String?       @map("delivery_address") @db.Text
-  totalAmount     Decimal       @map("total_amount") @db.Decimal(10, 2)
-  discountAmount  Decimal       @default(0) @map("discount_amount") @db.Decimal(10, 2)
-  finalAmount     Decimal       @map("final_amount") @db.Decimal(10, 2)
-  status          OrderStatus   @default(PENDING)
-  paymentStatus   PaymentStatus @default(PENDING) @map("payment_status")
-  notes           String?       @db.Text
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-
-  // Relations
-  customer        User               @relation(fields: [customerId], references: [id])
-  staff           Staff              @relation(fields: [staffId], references: [id])
-  items           SalesOrderItem[]
-
-  @@index([orderCode])
-  @@index([customerId])
-  @@index([staffId])
-  @@map("sales_orders")
-}
-
-// 15. Sales_Order_Items (Chi tiết đơn bán)
-model SalesOrderItem {
-  id               Int      @id @default(autoincrement())
-  salesOrderId     Int      @map("sales_order_id")
-  productId        Int      @map("product_id")
-  quantity         Int
-  unitPrice        Decimal  @map("unit_price") @db.Decimal(10, 2)
-  discountPercent  Decimal  @default(0) @map("discount_percent") @db.Decimal(5, 2)
-  totalPrice       Decimal  @map("total_price") @db.Decimal(10, 2)
-  createdAt        DateTime @default(now()) @map("created_at")
-
-  // Relations
-  salesOrder       SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
-  product          Product    @relation(fields: [productId], references: [id])
-
-  @@index([salesOrderId])
-  @@index([productId])
-  @@map("sales_order_items")
-}
-
-// 16. Comments (Bình luận)
-model Comment {
-  id          Int      @id @default(autoincrement())
-  productId   Int      @map("product_id")
-  userId      Int?     @map("user_id")
-  parentId    Int?     @map("parent_id")
-  content     String   @db.Text
-  rating      Int?
-  isApproved  Boolean  @default(false) @map("is_approved")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  parent       Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies      Comment[]     @relation("CommentReplies")
-  guestComment GuestComment?
-
-  @@index([productId])
-  @@index([userId])
-  @@index([parentId])
-  @@map("comments")
-}
-
-// 17. Guest_Comments (Bình luận khách)
-model GuestComment {
-  id           Int     @id @default(autoincrement())
-  commentId    Int     @unique @map("comment_id")
-  guestName    String  @map("guest_name") @db.VarChar(100)
-  guestEmail   String? @map("guest_email") @db.VarChar(100)
-  guestPhone   String? @map("guest_phone") @db.VarChar(20)
-  guestAddress String? @map("guest_address") @db.Text
-
-  // Relations
-  comment      Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
-
-  @@map("guest_comments")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

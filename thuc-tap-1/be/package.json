@@ -35,7 +35,8 @@
     "db:seed:purchase-orders": "npx ts-node -r tsconfig-paths/register src/prisma/seeds/index.ts purchase-orders",
     "db:seed:sales-orders": "npx ts-node -r tsconfig-paths/register src/prisma/seeds/index.ts sales-orders",
     "db:seed:inventory-transactions": "npx ts-node -r tsconfig-paths/register src/prisma/seeds/index.ts inventory-transactions",
-    "db:seed:all": "npx ts-node -r tsconfig-paths/register src/prisma/seeds/index.ts all"
+    "db:seed:all": "npx ts-node -r tsconfig-paths/register src/prisma/seeds/index.ts all",
+    "db:format": "prisma format --schema=./src/prisma/schema.prisma"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
