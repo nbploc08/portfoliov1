@@ -7,7 +7,7 @@ import { seedComments } from './seeds/comment.seed';
 import { seedInventoryTransactions } from './seeds/inventory-transaction.seed';
 import { seedPurchaseOrders } from './seeds/purchase-order.seed';
 import { seedSalesOrders } from './seeds/sales-order.seed';
-import { seedStaff } from './seeds/staff.seed';
+import { seedADMIN } from './seeds/ADMIN.seed';
 import { seedSuppliers } from './seeds/supplier.seed';
 import { seedTags } from './seeds/tag.seed';
 
@@ -33,9 +33,9 @@ async function main() {
     await seedProducts(prisma);
     console.log('✅ Products seeded');
 
-    // Seed Staff
-    await seedStaff(prisma);
-    console.log('✅ Staff seeded');
+    // Seed ADMIN
+    await seedADMIN(prisma);
+    console.log('✅ ADMIN seeded');
 
     // Seed Tags
     await seedTags(prisma);
@@ -60,7 +60,6 @@ async function main() {
     // Seed Inventory Transactions
     await seedInventoryTransactions(prisma);
     console.log('✅ Inventory Transactions seeded');
-
 
     console.log('🎉 Seed hoàn thành!');
   } catch (error) {

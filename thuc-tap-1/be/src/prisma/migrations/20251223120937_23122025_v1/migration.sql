@@ -14,7 +14,7 @@
   - You are about to drop the `purchase_orders` table. If the table is not empty, all the data it contains will be lost.
   - You are about to drop the `sales_order_items` table. If the table is not empty, all the data it contains will be lost.
   - You are about to drop the `sales_orders` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `staff` table. If the table is not empty, all the data it contains will be lost.
+  - You are about to drop the `ADMIN` table. If the table is not empty, all the data it contains will be lost.
   - You are about to drop the `suppliers` table. If the table is not empty, all the data it contains will be lost.
   - You are about to drop the `tags` table. If the table is not empty, all the data it contains will be lost.
   - You are about to drop the `users` table. If the table is not empty, all the data it contains will be lost.
@@ -39,7 +39,7 @@ ALTER TABLE `inventory` DROP FOREIGN KEY `inventory_product_id_fkey`;
 ALTER TABLE `inventory_transactions` DROP FOREIGN KEY `inventory_transactions_product_id_fkey`;
 
 -- DropForeignKey
-ALTER TABLE `inventory_transactions` DROP FOREIGN KEY `inventory_transactions_staff_id_fkey`;
+ALTER TABLE `inventory_transactions` DROP FOREIGN KEY `inventory_transactions_ADMIN_id_fkey`;
 
 -- DropForeignKey
 ALTER TABLE `product_images` DROP FOREIGN KEY `product_images_product_id_fkey`;
@@ -66,7 +66,7 @@ ALTER TABLE `purchase_order_items` DROP FOREIGN KEY `purchase_order_items_produc
 ALTER TABLE `purchase_order_items` DROP FOREIGN KEY `purchase_order_items_purchase_order_id_fkey`;
 
 -- DropForeignKey
-ALTER TABLE `purchase_orders` DROP FOREIGN KEY `purchase_orders_staff_id_fkey`;
+ALTER TABLE `purchase_orders` DROP FOREIGN KEY `purchase_orders_ADMIN_id_fkey`;
 
 -- DropForeignKey
 ALTER TABLE `purchase_orders` DROP FOREIGN KEY `purchase_orders_supplier_id_fkey`;
@@ -81,13 +81,13 @@ ALTER TABLE `sales_order_items` DROP FOREIGN KEY `sales_order_items_sales_order_
 ALTER TABLE `sales_orders` DROP FOREIGN KEY `sales_orders_customer_id_fkey`;
 
 -- DropForeignKey
-ALTER TABLE `sales_orders` DROP FOREIGN KEY `sales_orders_staff_id_fkey`;
+ALTER TABLE `sales_orders` DROP FOREIGN KEY `sales_orders_ADMIN_id_fkey`;
 
 -- DropForeignKey
-ALTER TABLE `staff` DROP FOREIGN KEY `staff_manager_id_fkey`;
+ALTER TABLE `ADMIN` DROP FOREIGN KEY `ADMIN_manager_id_fkey`;
 
 -- DropForeignKey
-ALTER TABLE `staff` DROP FOREIGN KEY `staff_user_id_fkey`;
+ALTER TABLE `ADMIN` DROP FOREIGN KEY `ADMIN_user_id_fkey`;
 
 -- DropTable
 DROP TABLE `categories`;
@@ -129,7 +129,7 @@ DROP TABLE `sales_order_items`;
 DROP TABLE `sales_orders`;
 
 -- DropTable
-DROP TABLE `staff`;
+DROP TABLE `ADMIN`;
 
 -- DropTable
 DROP TABLE `suppliers`;

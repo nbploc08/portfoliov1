@@ -2,10 +2,18 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from '@/app.module';
 import { HttpExceptionFilter } from '@/share/filters/http-exception.filter';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  // Thêm ValidationPipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Loại bỏ properties không khai báo
+      forbidNonWhitelisted: true, // Báo lỗi nếu có properties không khai báo
+      transform: true, // Tự động transform types
+    }),
+  );
   // Enable CORS
   app.enableCors();
 
@@ -25,7 +33,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const port = process.env.PORT || 4301;
+  const port = process.env.PORT || 4333;
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
   console.log(`Swagger documentation: http://localhost:${port}/api`);
