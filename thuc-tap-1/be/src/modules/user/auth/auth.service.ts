@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -8,10 +12,16 @@ import * as bcrypt from 'bcrypt';
 
 import { UserRole } from '@/share/enum';
 import { RegisterResDto } from './dto/registerRes.dto';
+import { UsersService } from '@/modules/admin/users/users.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async userExists(email: string) {
     return this.prisma.user.findUnique({
@@ -22,18 +32,32 @@ export class AuthService {
   async hashPassword(password: string) {
     return await bcrypt.hash(password, 10);
   }
-  // constructor(private usersService: UsersService) {}
+  async comparePassword(password: string, hashedPassword: string) {
+    return await bcrypt.compare(password, hashedPassword);
+  }
 
-  // async signIn(username: string, pass: string): Promise<any> {
-  //   const user = await this.usersService.findOne(username);
-  //   if (user?.password !== pass) {
-  //     throw new UnauthorizedException();
-  //   }
-  //   const { password, ...result } = user;
-  //   // TODO: Generate a JWT and return it here
-  //   // instead of the user object
-  //   return result;
-  // }
+  // Đăng nhập
+  async signIn(
+    email: string,
+    password: string,
+  ): Promise<{ access_token: string }> {
+    const user = await this.usersService.findOneByEmail(email);
+    if (!user || !(await this.comparePassword(password, user.password))) {
+      throw new UnauthorizedException(
+        formatMessage(MESSAGE_KEYS.COMMON.UNAUTHORIZED),
+      );
+    }
+    console.log(user);
+    const payload = { sub: user.id, email: user.email };
+    console.log(payload);
+    const result = await this.jwtService.signAsync(payload);
+    console.log(result);
+    return {
+      access_token: result,
+    };
+  }
+
+  // Đăng kí
   async register(registerDto: RegisterDto): Promise<RegisterResDto> {
     console.log(registerDto);
     if (await this.userExists(registerDto.email)) {
