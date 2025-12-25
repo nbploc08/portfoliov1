@@ -117,7 +117,7 @@ CREATE TABLE `users` (
     `full_name` VARCHAR(100) NULL,
     `address` TEXT NULL,
     `phone` VARCHAR(20) NULL,
-    `role` ENUM('ADMIN', 'STAFF', 'USER') NOT NULL DEFAULT 'USER',
+    `role` ENUM('ADMIN', 'ADMIN', 'USER') NOT NULL DEFAULT 'USER',
     `avatar_url` VARCHAR(500) NULL,
     `is_active` BOOLEAN NOT NULL DEFAULT true,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -131,7 +131,7 @@ CREATE TABLE `users` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `staff` (
+CREATE TABLE `ADMIN` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `user_id` INTEGER NOT NULL,
     `employee_code` VARCHAR(20) NOT NULL,
@@ -144,9 +144,9 @@ CREATE TABLE `staff` (
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `staff_user_id_key`(`user_id`),
-    UNIQUE INDEX `staff_employee_code_key`(`employee_code`),
-    INDEX `staff_employee_code_idx`(`employee_code`),
+    UNIQUE INDEX `ADMIN_user_id_key`(`user_id`),
+    UNIQUE INDEX `ADMIN_employee_code_key`(`employee_code`),
+    INDEX `ADMIN_employee_code_idx`(`employee_code`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -155,7 +155,7 @@ CREATE TABLE `purchase_orders` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `order_code` VARCHAR(50) NOT NULL,
     `supplier_id` INTEGER NOT NULL,
-    `staff_id` INTEGER NOT NULL,
+    `ADMIN_id` INTEGER NOT NULL,
     `order_date` DATETIME(3) NOT NULL,
     `expected_delivery` DATETIME(3) NULL,
     `total_amount` DECIMAL(10, 2) NOT NULL,
@@ -167,7 +167,7 @@ CREATE TABLE `purchase_orders` (
     UNIQUE INDEX `purchase_orders_order_code_key`(`order_code`),
     INDEX `purchase_orders_order_code_idx`(`order_code`),
     INDEX `purchase_orders_supplier_id_idx`(`supplier_id`),
-    INDEX `purchase_orders_staff_id_idx`(`staff_id`),
+    INDEX `purchase_orders_ADMIN_id_idx`(`ADMIN_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -211,12 +211,12 @@ CREATE TABLE `inventory_transactions` (
     `quantity` INTEGER NOT NULL,
     `reference_type` VARCHAR(50) NULL,
     `reference_id` INTEGER NULL,
-    `staff_id` INTEGER NOT NULL,
+    `ADMIN_id` INTEGER NOT NULL,
     `notes` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     INDEX `inventory_transactions_product_id_idx`(`product_id`),
-    INDEX `inventory_transactions_staff_id_idx`(`staff_id`),
+    INDEX `inventory_transactions_ADMIN_id_idx`(`ADMIN_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -225,7 +225,7 @@ CREATE TABLE `sales_orders` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `order_code` VARCHAR(50) NOT NULL,
     `customer_id` INTEGER NOT NULL,
-    `staff_id` INTEGER NOT NULL,
+    `ADMIN_id` INTEGER NOT NULL,
     `order_date` DATETIME(3) NOT NULL,
     `delivery_address` TEXT NULL,
     `total_amount` DECIMAL(10, 2) NOT NULL,
@@ -240,7 +240,7 @@ CREATE TABLE `sales_orders` (
     UNIQUE INDEX `sales_orders_order_code_key`(`order_code`),
     INDEX `sales_orders_order_code_idx`(`order_code`),
     INDEX `sales_orders_customer_id_idx`(`customer_id`),
-    INDEX `sales_orders_staff_id_idx`(`staff_id`),
+    INDEX `sales_orders_ADMIN_id_idx`(`ADMIN_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -310,16 +310,16 @@ ALTER TABLE `product_suppliers` ADD CONSTRAINT `product_suppliers_product_id_fke
 ALTER TABLE `product_suppliers` ADD CONSTRAINT `product_suppliers_supplier_id_fkey` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `staff` ADD CONSTRAINT `staff_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `ADMIN` ADD CONSTRAINT `ADMIN_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `staff` ADD CONSTRAINT `staff_manager_id_fkey` FOREIGN KEY (`manager_id`) REFERENCES `staff`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `ADMIN` ADD CONSTRAINT `ADMIN_manager_id_fkey` FOREIGN KEY (`manager_id`) REFERENCES `ADMIN`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `purchase_orders` ADD CONSTRAINT `purchase_orders_supplier_id_fkey` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `purchase_orders` ADD CONSTRAINT `purchase_orders_staff_id_fkey` FOREIGN KEY (`staff_id`) REFERENCES `staff`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `purchase_orders` ADD CONSTRAINT `purchase_orders_ADMIN_id_fkey` FOREIGN KEY (`ADMIN_id`) REFERENCES `ADMIN`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `purchase_order_items` ADD CONSTRAINT `purchase_order_items_purchase_order_id_fkey` FOREIGN KEY (`purchase_order_id`) REFERENCES `purchase_orders`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -334,13 +334,13 @@ ALTER TABLE `inventory` ADD CONSTRAINT `inventory_product_id_fkey` FOREIGN KEY (
 ALTER TABLE `inventory_transactions` ADD CONSTRAINT `inventory_transactions_product_id_fkey` FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `inventory_transactions` ADD CONSTRAINT `inventory_transactions_staff_id_fkey` FOREIGN KEY (`staff_id`) REFERENCES `staff`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `inventory_transactions` ADD CONSTRAINT `inventory_transactions_ADMIN_id_fkey` FOREIGN KEY (`ADMIN_id`) REFERENCES `ADMIN`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `sales_orders` ADD CONSTRAINT `sales_orders_customer_id_fkey` FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `sales_orders` ADD CONSTRAINT `sales_orders_staff_id_fkey` FOREIGN KEY (`staff_id`) REFERENCES `staff`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `sales_orders` ADD CONSTRAINT `sales_orders_ADMIN_id_fkey` FOREIGN KEY (`ADMIN_id`) REFERENCES `ADMIN`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `sales_order_items` ADD CONSTRAINT `sales_order_items_sales_order_id_fkey` FOREIGN KEY (`sales_order_id`) REFERENCES `sales_orders`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

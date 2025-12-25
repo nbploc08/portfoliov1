@@ -4,49 +4,49 @@
 
 **Mini Shop** là hệ thống quản lý cửa hàng mini với các chức năng chính:
 
-- 🛍️ **Quản lý sản phẩm** - Danh mục, sản phẩm, hình ảnh
-- 🏷️ **Hệ thống tags** - Phân loại và tìm kiếm
-- 💬 **Bình luận đánh giá** - Hỗ trợ subcomment
-- 👥 **Quản lý người dùng** - Khách hàng và nhân viên
-- 🏢 **Quản lý nhà cung cấp** - Thông tin và đánh giá
-- 📦 **Quản lý nhập hàng** - Đơn hàng và chi tiết
-- 📊 **Quản lý kho hàng** - Tồn kho và giao dịch
-- 💰 **Quản lý bán hàng** - Đơn hàng và doanh thu
+-   🛍️ **Quản lý sản phẩm** - Danh mục, sản phẩm, hình ảnh
+-   🏷️ **Hệ thống tags** - Phân loại và tìm kiếm
+-   💬 **Bình luận đánh giá** - Hỗ trợ subcomment
+-   👥 **Quản lý người dùng** - Khách hàng và nhân viên
+-   🏢 **Quản lý nhà cung cấp** - Thông tin và đánh giá
+-   📦 **Quản lý nhập hàng** - Đơn hàng và chi tiết
+-   📊 **Quản lý kho hàng** - Tồn kho và giao dịch
+-   💰 **Quản lý bán hàng** - Đơn hàng và doanh thu
 
 ## 🎯 Phân tích yêu cầu
 
 ### 1. Trang chủ
 
-- Hiển thị danh sách thể loại hàng hóa
-- Sản phẩm với thông tin cơ bản
+-   Hiển thị danh sách thể loại hàng hóa
+-   Sản phẩm với thông tin cơ bản
 
 ### 2. Danh sách sản phẩm
 
-- Tags để phân loại và tìm kiếm
+-   Tags để phân loại và tìm kiếm
 
 ### 3. Chi tiết sản phẩm
 
-- Comment và subcomment 2 cấp
+-   Comment và subcomment 2 cấp
 
 ### 4. Quản lý nhà cung cấp
 
-- Thông tin liên hệ và đánh giá
-- Lịch sử giao dịch
+-   Thông tin liên hệ và đánh giá
+-   Lịch sử giao dịch
 
 ### 5. Quản lý nhập hàng
 
-- Đơn hàng nhập từ nhà cung cấp
-- Chi tiết sản phẩm và giá nhập
+-   Đơn hàng nhập từ nhà cung cấp
+-   Chi tiết sản phẩm và giá nhập
 
 ### 6. Quản lý kho hàng
 
-- Tồn kho hiện tại
-- Lịch sử nhập/xuất
+-   Tồn kho hiện tại
+-   Lịch sử nhập/xuất
 
 ### 7. Quản lý bán hàng
 
-- Đơn hàng bán cho khách hàng
-- Chi tiết sản phẩm và giá bán
+-   Đơn hàng bán cho khách hàng
+-   Chi tiết sản phẩm và giá bán
 
 ## 🗄️ Cấu trúc Database
 
@@ -195,11 +195,11 @@
 └─────────────────┘
 ```
 
-#### 9. Staff (Nhân viên)
+#### 9. ADMIN (Nhân viên)
 
 ```
 ┌─────────────────┐
-│     STAFF       │
+│     ADMIN       │
 ├─────────────────┤
 │ id (PK)         │
 │ user_id (FK)    │
@@ -226,7 +226,7 @@
 │ id (PK)         │
 │ order_code      │
 │ supplier_id(FK) │
-│ staff_id (FK)   │
+│ ADMIN_id (FK)   │
 │ order_date      │
 │ expected_delivery│
 │ total_amount    │
@@ -286,7 +286,7 @@
 │ quantity        │
 │ reference_type  │
 │ reference_id    │
-│ staff_id (FK)   │
+│ ADMIN_id (FK)   │
 │ notes           │
 │ created_at      │
 └─────────────────┘
@@ -303,7 +303,7 @@
 │ id (PK)         │
 │ order_code      │
 │ customer_id(FK) │
-│ staff_id (FK)   │
+│ ADMIN_id (FK)   │
 │ order_date      │
 │ delivery_address│
 │ total_amount    │
@@ -378,12 +378,12 @@ Products (N) ←──→ (N) Suppliers (via Product_Suppliers)
 Products (1) ──→ (1) Inventory
 Products (1) ──→ (N) Inventory_Transactions
 Products (1) ──→ (N) Comments
-Users (1) ──→ (1) Staff
+Users (1) ──→ (1) ADMIN
 Users (1) ──→ (N) Comments
 Users (1) ──→ (N) Sales_Orders
-Staff (1) ──→ (N) Purchase_Orders
-Staff (1) ──→ (N) Sales_Orders
-Staff (1) ──→ (N) Inventory_Transactions
+ADMIN (1) ──→ (N) Purchase_Orders
+ADMIN (1) ──→ (N) Sales_Orders
+ADMIN (1) ──→ (N) Inventory_Transactions
 Suppliers (1) ──→ (N) Purchase_Orders
 Purchase_Orders (1) ──→ (N) Purchase_Order_Items
 Sales_Orders (1) ──→ (N) Sales_Order_Items
