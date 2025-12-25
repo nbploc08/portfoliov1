@@ -47,11 +47,11 @@ export class AuthService {
         formatMessage(MESSAGE_KEYS.COMMON.UNAUTHORIZED),
       );
     }
-    console.log(user);
-    const payload = { sub: user.id, email: user.email };
-    console.log(payload);
+
+    const payload = { sub: user.id, email: user.email, roles: user.role };
+
     const result = await this.jwtService.signAsync(payload);
-    console.log(result);
+
     return {
       access_token: result,
     };

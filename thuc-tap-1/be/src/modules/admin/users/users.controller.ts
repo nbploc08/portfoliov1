@@ -15,6 +15,9 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '@/modules/common/guards/auth.guard';
 import { User } from '@/modules/common/decorator/user.decorator';
 import { Public } from '@/modules/common/decorator/metadata.decorator';
+import { RolesGuard } from '@/modules/common/guards/roles.guard';
+import { UserRole } from '@/share/enum';
+import { Roles } from '@/modules/common/decorator/roles.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -24,8 +27,8 @@ export class UsersController {
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
-  @UseGuards(AuthGuard)
-  @Public()
+
+  @Roles(UserRole.USER)
   @Get()
   findAll(@Req() request: Request, @User() user: any) {
     console.log(user);
