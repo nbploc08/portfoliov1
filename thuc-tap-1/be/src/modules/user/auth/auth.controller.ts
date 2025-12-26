@@ -34,4 +34,4 @@ export class AuthController {
   signIn(@Body() signInDto: RegisterDto) {
     return this.authService.signIn(signInDto.email, signInDto.password);
   }
-} 
+}
