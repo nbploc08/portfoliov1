@@ -24,10 +24,12 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
+  @Roles(UserRole.ADMIN)
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
+  @Roles(UserRole.ADMIN)
   @Roles(UserRole.USER)
   @Get()
   findAll(@Req() request: Request, @User() user: any) {
@@ -36,17 +38,19 @@ export class UsersController {
   }
 
   @Get(':id')
+  @Roles(UserRole.ADMIN)
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.USER)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+    return this.usersService.update(id, updateUserDto);
   }
-
+  @Roles(UserRole.ADMIN)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+    return this.usersService.remove(id);
   }
 }
