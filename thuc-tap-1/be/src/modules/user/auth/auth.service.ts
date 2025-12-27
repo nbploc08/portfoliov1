@@ -37,10 +37,7 @@ export class AuthService {
   }
 
   // Đăng nhập
-  async signIn(
-    email: string,
-    password: string,
-  ): Promise<{ access_token: string }> {
+  async signIn(email: string, password: string) {
     const user = await this.usersService.findOneByEmail(email);
     if (!user || !(await this.comparePassword(password, user.password))) {
       throw new UnauthorizedException(
@@ -48,11 +45,14 @@ export class AuthService {
       );
     }
 
-    const payload = { sub: user.id, email: user.email, roles: user.role };
+    const payload = { id: user.id, email: user.email, role: user.role };
 
     const result = await this.jwtService.signAsync(payload);
 
     return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
       access_token: result,
     };
   }
