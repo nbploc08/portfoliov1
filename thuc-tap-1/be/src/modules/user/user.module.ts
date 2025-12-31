@@ -6,10 +6,11 @@ import { PortfoliosModule } from './portfolios/portfolios.module';
 import { AssetModule } from './asset/asset.module';
 import { TokensModule } from './tokens/tokens.module';
 import { PriceModule } from './price/price.module';
+import { AlertsModule } from './alerts/alerts.module';
 
 @Module({
   controllers: [UserController],
   providers: [UserService],
-  imports: [AuthModule, PortfoliosModule, AssetModule, TokensModule, PriceModule],
+  imports: [AuthModule, PortfoliosModule, AssetModule, TokensModule, PriceModule, AlertsModule],
 })
 export class UserModule {}
