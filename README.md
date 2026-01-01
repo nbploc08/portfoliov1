@@ -20,7 +20,7 @@ Mô tả ngắn dự án (2–3 dòng)
 - JWT
 
 ## Project Structure
-(Mô tả ngắn gọn các module)
+
 
 ## How to Run
 - npm install
