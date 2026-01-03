@@ -1,28 +1,30 @@
+import { Controller, Get, Post } from '@nestjs/common';
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { TokensService } from './tokens.service';
-import { CreateTokenDto } from './dto/create-token.dto';
-import { UpdateTokenDto } from './dto/update-token.dto';
 import { Public } from '@/modules/common/decorator/metadata.decorator';
 
+@ApiTags('Tokens')
 @Controller('tokens')
 export class TokensController {
   constructor(private readonly tokensService: TokensService) {}
 
   @Get()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy danh sách token đang theo dõi' })
+  @ApiOkResponse({ description: 'Danh sách token' })
   findAll() {
     return this.tokensService.findAll();
   }
 
   @Post('create')
   @Public()
+  @ApiOperation({ summary: 'Khởi tạo dữ liệu token ban đầu (public)' })
+  @ApiOkResponse({ description: 'Danh sách token đã được tạo' })
   createTokens() {
     return this.tokensService.createTokens();
   }

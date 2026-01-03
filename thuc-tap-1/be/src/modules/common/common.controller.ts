@@ -1,8 +1,14 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CommonService } from '@/modules/common/common.service';
 
 @ApiTags('Common')
+@ApiBearerAuth()
 @Controller('common')
 export class CommonController {
   constructor(private readonly commonService: CommonService) {}
