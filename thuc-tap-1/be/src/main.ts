@@ -27,9 +27,25 @@ async function bootstrap() {
     .setTitle('MiniShop API')
     .setDescription('API documentation for MiniShop application')
     .setVersion('1.0')
-    .addTag('Quản lý người dùng')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Nhập JWT token vào đây',
+      }
+    )
+    .addTag('Auth')
     .addTag('Admin')
+    .addTag('Dashboard')
     .addTag('Common')
+    .addTag('Axios')
+    .addTag('Cron')
+    .addTag('Tokens')
+    .addTag('Prices')
+    .addTag('Assets')
+    .addTag('Portfolios')
+    .addTag('Alerts')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
