@@ -53,7 +53,7 @@ export class CronService {
     return result;
   }
 
-  // @Cron('*/80 * * * * *')
+  @Cron('*/80 * * * * *')
   async updatePriceTokens() {
     const priceTokens = await this.getPriceTokens();
     await this.updateTokens(priceTokens);
@@ -88,7 +88,7 @@ export class CronService {
     console.log('Called every 80 seconds update price', result);
   }
 
-  // @Cron(CronExpression.EVERY_SECOND)
+  @Cron(CronExpression.EVERY_SECOND)
   async triggerAlert() {
     const alerts = await this.prisma.alert.findMany({
       where: {
@@ -119,7 +119,6 @@ export class CronService {
           });
           console.log(`Alert ${alert.id} triggered`);
         }
-        
       }
     }
   }
