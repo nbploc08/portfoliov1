@@ -58,16 +58,39 @@ export class AssetService {
     // create or update asset
     if (tokenPortfolioUnique) {
       if (tokenPortfolioUnique.amount + amount > 0) {
-        return await this.prisma.portfolioAsset.update({
-          where: { portfolioId_tokenId: { portfolioId, tokenId } },
-          data: { amount: tokenPortfolioUnique.amount + amount },
+        return this.prisma.$transaction(async (tx) => {
+          await tx.portfolioAsset.update({
+            where: { portfolioId_tokenId: { portfolioId, tokenId } },
+            data: { amount: tokenPortfolioUnique.amount + amount },
+          });
+
+          await tx.assetHistory.create({
+            data: {
+              assetId: tokenPortfolioUnique.id,
+              portfolioId,
+              tokenId,
+              oldAmount: tokenPortfolioUnique.amount,
+              newAmount: tokenPortfolioUnique.amount + amount,
+            },
+          });
         });
       } else {
         throw new BadRequestException('Amount must be greater than balance');
       }
     } else if (!tokenPortfolioUnique && amount > 0) {
-      return await this.prisma.portfolioAsset.create({
-        data: { portfolioId, tokenId, amount },
+      return this.prisma.$transaction(async (tx) => {
+        const result = await tx.portfolioAsset.create({
+          data: { portfolioId, tokenId, amount },
+        });
+        await tx.assetHistory.create({
+          data: {
+            assetId: result.id,
+            portfolioId,
+            tokenId,
+            oldAmount: 0,
+            newAmount: amount,
+          },
+        });
       });
     } else {
       throw new BadRequestException('Create :Amount must be greater than 0');
@@ -94,14 +117,25 @@ export class AssetService {
     if (!asset) {
       throw new BadRequestException('Asset not found');
     }
-    return this.prisma.portfolioAsset.update({
-      where: {
-        portfolioId_tokenId: {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.portfolioAsset.update({
+        where: {
+          portfolioId_tokenId: {
+            portfolioId: portfolioId || '',
+            tokenId: tokenId || '',
+          },
+        },
+        data: { amount: 0 },
+      });
+      await tx.assetHistory.create({
+        data: {
+          assetId: asset.id,
           portfolioId: portfolioId || '',
           tokenId: tokenId || '',
+          oldAmount: asset.amount,
+          newAmount: 0,
         },
-      },
-      data: { amount: 0 },
+      });
     });
   }
 }
