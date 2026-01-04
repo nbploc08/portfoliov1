@@ -1,235 +1,158 @@
-# 🚀 Thực tập 1 – Backend Internship Project
+# 🚀 Thực tập 1 – Backend Crypto Portfolio (NestJS)
 
-> A backend project focusing on system design, data modeling, and role-based access control.
+Backend mô phỏng hệ thống quản lý danh mục đầu tư crypto: RBAC USER/ADMIN, cập nhật giá token từ CoinMarketCap, cảnh báo giá tự động, cache và thống kê admin.
 
----
+## 1. Kiến trúc & công nghệ
 
-## 📌 Overview
+- NestJS 11, TypeScript, REST + Swagger.
+- Prisma ORM + MySQL (`DATABASE_URL`).
+- JWT Auth (`JWT_SECRET`, `JWT_EXPIRES_IN`), ValidationPipe whitelist/forbid, HttpExceptionFilter, TransformInterceptor.
+- Cache: cache-manager cho thống kê admin, PriceCache in-memory cho giá mới nhất.
+- Cron jobs (@nestjs/schedule) đồng bộ giá & kích hoạt cảnh báo.
 
-**Thực tập 1** là một dự án backend được xây dựng nhằm mô phỏng  
-**hệ thống quản lý danh mục đầu tư crypto cá nhân**,  
-tập trung vào **thiết kế hệ thống backend và tư duy dữ liệu**,  
-không tập trung vào giao diện người dùng.
+## 2. Tính năng chính
 
-Dự án được thiết kế theo hướng:
+- Đăng ký/Đăng nhập, phát JWT (payload `{id,email,role}`).
+- RBAC toàn cục: AuthGuard (JWT) + RolesGuard (role USER/ADMIN), `@Public()` cho endpoint mở.
+- Quản lý danh mục: tạo/list/sửa/xóa portfolio cho user; admin xem danh mục bất kỳ.
+- Tài sản trong portfolio: mua/bán (cập nhật amount), lưu lịch sử `AssetHistory`.
+- Token & giá:
+  - Seed danh sách token từ CoinMarketCap.
+  - Lưu lịch sử giá `TokenPrice`, trả giá mới nhất (cache hoặc DB).
+- Cảnh báo giá: tạo/update/delete alert GT/LT, cron tự đánh dấu triggered khi đạt ngưỡng.
+- Admin dashboard: thống kê users/portfolios/alerts/assets với cache 50s.
 
-- Đúng chuẩn backend thực tế
-- Dễ mở rộng trong tương lai
-- Phù hợp cho thực tập / junior backend developer
+## 3. Cấu trúc mã nguồn (be/)
 
----
+- `src/main.ts` – bootstrap, CORS, pipes, filters, interceptors, Swagger `/api`, port `process.env.PORT || 4333`.
+- `src/app.module.ts` – ghép module, APP_GUARD (AuthGuard + RolesGuard), global cache.
+- `modules/user`:
+  - `auth`: register/login.
+  - `portfolios`, `asset`, `tokens`, `price`, `alerts`.
+- `modules/admin`:
+  - `users`: CRUD user (admin).
+  - `dashboard`: thống kê (dùng cache).
+- `modules/common`: decorators, guards, cache wrapper, axios (CMC), cron jobs.
+- `prisma/schema.prisma`: User, Portfolio, Token, TokenPrice, Alert, PortfolioAsset, AssetHistory; enums Role, AlertCondition.
 
-## 🎯 Project Objectives
+## 4. Luồng nghiệp vụ
 
-- Thiết kế cơ sở dữ liệu theo mô hình ERD rõ ràng
-- Hiểu luồng dữ liệu trong hệ thống backend
-- Áp dụng phân quyền **USER / ADMIN**
-- Phân tách rõ vai trò giữa backend và frontend
-- Làm nền tảng cho các hệ thống phức tạp hơn
+- User: đăng ký/đăng nhập → tạo portfolio → thêm token vào portfolio (mua/bán, log lịch sử) → xem giá → tạo alert; cron tự kích hoạt alert.
+- Admin: đăng nhập → CRUD user → xem danh mục bất kỳ → xem dashboard stats (cached).
+- Dòng giá: cron 80s lấy giá CMC, đồng bộ token mới, lưu `TokenPrice`, đẩy `PriceCache`; cron mỗi giây quét alert chưa trigger, so sánh giá mới nhất và cập nhật `isTriggered`.
 
----
+## 5. API map nhanh
 
-## 👥 Roles & Permissions
+- Public: `POST /auth/register`, `POST /auth/login`, `GET /price`, `POST /tokens/create` (seed token).
+- User (JWT): `/portfolios`, `/asset`, `/alerts`, `/price/:id`, `/tokens`.
+- Admin (JWT + role ADMIN): `/users`, `/dashboard/stats`.
 
-### 👤 User
+## 6. Chuẩn response & error
 
-- Register / Login
-- Create and manage personal portfolios
-- Add or remove tokens from portfolios
-- Track token prices
-- Create and manage price alerts
+- Success: TransformInterceptor → `{ success, messageKey, message, data, timestamp }`.
+- Error: HttpExceptionFilter map status → messageKey → `{ success:false, messageKey, message, errors?, timestamp }`.
+- Message template tập trung tại `share/messages.ts` (dễ i18n/maintain).
 
-### 🛠️ Admin
+## 7. Cơ sở dữ liệu (Prisma tóm tắt)
 
-- System monitoring and supervision
-- View all users in the system
-- View all portfolios and alerts
-- Access system statistics via admin dashboard
-- **No permission to modify market data**
+- User (role USER/ADMIN) 1-n Portfolio, 1-n Alert.
+- Portfolio 1-n PortfolioAsset; AssetHistory log old/new amount.
+- Token 1-n TokenPrice (lịch sử giá), 1-n Alert.
+- Alert: condition GT/LT, targetPrice, isTriggered.
 
----
+## 8. Biến môi trường tối thiểu
 
-## 🔐 Authorization Model
+- `DATABASE_URL` – MySQL connection string.
+- `JWT_SECRET`, `JWT_EXPIRES_IN` – ký/hạn JWT.
+- `CMC_API_KEY` – CoinMarketCap API key.
+- `PORT` (tuỳ chọn, mặc định 4333).
 
-| Action                 | User | Admin |
-| ---------------------- | ---- | ----- |
-| Manage own portfolio   | ✅   | ❌    |
-| View token prices      | ✅   | ✅    |
-| Create alerts          | ✅   | ❌    |
-| View all users         | ❌   | ✅    |
-| View all portfolios    | ❌   | ✅    |
-| Access dashboard stats | ❌   | ✅    |
+## 9. Chạy nhanh (dev)
 
----
+```bash
+cd be
+npm install
+npm run db:generate && npm run db:migrate   # tạo Prisma client + migrate
+npm run start:dev
+# Swagger: http://localhost:4333/api
+```
 
-## 🗂️ Data Model (ERD)
+## 10. Script hữu ích
 
-The system is designed around the following core entities:
+- `npm run db:migrate`, `db:deploy`, `db:reset`, `db:seed`
+- `npm run lint`, `npm run build`, `npm run start:prod`
 
-- **User** – System accounts
-- **Portfolio** – User investment portfolios
-- **Token** – Shared list of crypto assets
-- **PortfolioAsset** – Tokens inside portfolios (junction table)
-- **TokenPrice** – Historical token price data
-- **Alert** – User-defined price alerts
-
-### Design Principles
-
-- Single responsibility per table
-- No redundant data storage
-- Historical price tracking instead of single current price
-- Clear one-to-many and many-to-many relationships
-
----
-
-## 🔄 Core System Flows
-
-### User Flow
-
-Register
-→ Create Portfolio
-→ Add Token to Portfolio
-→ Track Token Price
-→ Create Price Alert
-
-### Admin Flow
-
-Login
-→ View Users
-→ Monitor Portfolios
-→ Monitor Alerts
-→ View System Dashboard
-
----
-
-## 💹 Token Price Strategy
-
-- Token and price data are treated as **background data**
-- Backend acts as the **single source of truth**
-- Frontend consumes data via backend APIs only
-- System design supports **near real-time price updates**
-
-> Real-time data handling is a backend responsibility, not a frontend concern.
-
----
-
-## 📊 Admin Dashboard (API-Based)
-
-The admin dashboard provides aggregated system statistics, such as:
-
-- Total number of users
-- Total number of portfolios
-- Total number of alerts
-- Active alerts count
-
-> Dashboard refers to backend APIs, not UI components.
-
----
-
-## 🛠️ Tech Stack
-
-- **Node.js**
-- **TypeScript**
-- **NestJS**
-- **Prisma ORM**
-- **MySQL**
-- **REST API**
-
----
-
-## 🚧 Project Scope & Limitations
-
-### Included
-
-- Backend system design
-- Role-based access control
-- Relational data modeling
-- Clear separation of concerns
-
-### Not Included
-
-- Frontend UI
-- High-scale architecture
-- Advanced real-time streaming
-- On-chain data integration
-
----
-
-## 🔮 Future Enhancements
-
-- Authentication & authorization refinement
-- Background jobs and alert engine
-- Price update scheduling and caching
-- Performance optimization
-- Advanced system monitoring
-
----
-
-## ✅ Conclusion
-
-**Thực tập 1** is not intended to be a production-ready system.  
-Its primary goal is to demonstrate **correct backend thinking from the start**:
-
-- Clean data modeling
-- Proper role separation
-- Scalable system foundations
-
-This project serves as a solid base for more advanced backend systems in the future.
-
-==========================================================================================================================================================
+## 11. ERD (mermaid)
 
 ```mermaid
 erDiagram
-USER ||--o{ PORTFOLIO : owns
-PORTFOLIO ||--o{ PORTFOLIO_ASSET : contains
-TOKEN ||--o{ PORTFOLIO_ASSET : included_in
-TOKEN ||--o{ TOKEN_PRICE : has
-USER ||--o{ ALERT : creates
-TOKEN ||--o{ ALERT : triggers
+  USER ||--o{ PORTFOLIO : owns
+  USER ||--o{ ALERT : creates
+  PORTFOLIO ||--o{ PORTFOLIO_ASSET : contains
+  TOKEN ||--o{ PORTFOLIO_ASSET : included_in
+  TOKEN ||--o{ TOKEN_PRICE : has
+  TOKEN ||--o{ ALERT : triggers
+  PORTFOLIO_ASSET ||--o{ ASSET_HISTORY : logs
 
-    USER {
-        string id PK
-        string email
-        string password
-        string role
-        datetime created_at
-    }
+  USER {
+    string id PK
+    string email
+    string password
+    enum role  // Role.USER | Role.ADMIN
+    datetime createdAt
+    datetime updatedAt
+  }
 
-    PORTFOLIO {
-        string id PK
-        string name
-        string user_id FK
-        datetime created_at
-    }
+  PORTFOLIO {
+    string id PK
+    string name
+    string userId FK
+    datetime createdAt
+    datetime updatedAt
+  }
 
-    TOKEN {
-        string id PK
-        string symbol
-        string name
-    }
+  TOKEN {
+    string id PK
+    string symbol UNIQUE
+    string name
+    datetime createdAt
+  }
 
-    PORTFOLIO_ASSET {
-        string id PK
-        string portfolio_id FK
-        string token_id FK
-        float amount
-    }
+  PORTFOLIO_ASSET {
+    string id PK
+    string portfolioId FK
+    string tokenId FK
+    float amount
+    datetime createdAt
+    datetime updatedAt
+    unique portfolioId_tokenId
+  }
 
-    TOKEN_PRICE {
-        string id PK
-        string token_id FK
-        float price
-        datetime created_at
-    }
+  TOKEN_PRICE {
+    string id PK
+    string tokenId FK
+    float price
+    datetime createdAt
+  }
 
-    ALERT {
-        string id PK
-        string user_id FK
-        string token_id FK
-        string condition
-        float target_price
-        boolean is_triggered
-        datetime created_at
-    }
+  ALERT {
+    string id PK
+    string userId FK
+    string tokenId FK
+    enum condition // AlertCondition.GT | AlertCondition.LT
+    float targetPrice
+    boolean isTriggered
+    datetime createdAt
+    datetime updatedAt
+  }
 
+  ASSET_HISTORY {
+    string id PK
+    string assetId FK
+    string portfolioId FK
+    string tokenId FK
+    float oldAmount
+    float newAmount
+    datetime createdAt
+  }
 ```

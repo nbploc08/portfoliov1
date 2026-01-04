@@ -1,6 +1,6 @@
 # @README – Backend Crypto Portfolio (NestJS)
 
-Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQL) với RBAC USER/ADMIN, cron cập nhật giá token, cảnh báo giá và cache. Tài liệu này tối ưu cho portfolio nộp CV.
+Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQL) với RBAC USER/ADMIN, cron cập nhật giá token, cảnh báo giá và cache. 
 
 1. Elevator pitch
 
@@ -101,3 +101,80 @@ Biến môi trường tối thiểu: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_
 -   Cron + external API + cache kết hợp để giảm tải DB và tăng tốc đọc giá.
 -   Transaction khi cập nhật tài sản để đồng bộ AssetHistory.
 -   Response/error contract thống nhất giúp frontend tiêu thụ dễ dàng.
+
+
+
+## 11. ERD (mermaid)
+
+```mermaid
+erDiagram
+  USER ||--o{ PORTFOLIO : owns
+  USER ||--o{ ALERT : creates
+  PORTFOLIO ||--o{ PORTFOLIO_ASSET : contains
+  TOKEN ||--o{ PORTFOLIO_ASSET : included_in
+  TOKEN ||--o{ TOKEN_PRICE : has
+  TOKEN ||--o{ ALERT : triggers
+  PORTFOLIO_ASSET ||--o{ ASSET_HISTORY : logs
+
+  USER {
+    string id PK
+    string email
+    string password
+    enum role  // Role.USER | Role.ADMIN
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  PORTFOLIO {
+    string id PK
+    string name
+    string userId FK
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  TOKEN {
+    string id PK
+    string symbol UNIQUE
+    string name
+    datetime createdAt
+  }
+
+  PORTFOLIO_ASSET {
+    string id PK
+    string portfolioId FK
+    string tokenId FK
+    float amount
+    datetime createdAt
+    datetime updatedAt
+    unique portfolioId_tokenId
+  }
+
+  TOKEN_PRICE {
+    string id PK
+    string tokenId FK
+    float price
+    datetime createdAt
+  }
+
+  ALERT {
+    string id PK
+    string userId FK
+    string tokenId FK
+    enum condition // AlertCondition.GT | AlertCondition.LT
+    float targetPrice
+    boolean isTriggered
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  ASSET_HISTORY {
+    string id PK
+    string assetId FK
+    string portfolioId FK
+    string tokenId FK
+    float oldAmount
+    float newAmount
+    datetime createdAt
+  }
+```
