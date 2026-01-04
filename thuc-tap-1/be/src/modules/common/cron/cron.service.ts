@@ -4,6 +4,7 @@ import { UpdateCronDto } from './dto/update-cron.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@/modules/prisma/prisma.service';
 import { AxiosService } from '../axios/axios.service';
+import { PriceCache } from '../cache/price.cache';
 
 @Injectable()
 export class CronService {
@@ -65,6 +66,15 @@ export class CronService {
             name: token.name,
           },
         });
+        PriceCache.set(
+          {
+            tokenId: tokenId?.id || '',
+            symbol: token.symbol,
+            name: token.name,
+            price: token.price,
+            updatedAt: new Date(),
+          },
+        );
         return {
           price: token.price,
           tokenId: tokenId?.id,
