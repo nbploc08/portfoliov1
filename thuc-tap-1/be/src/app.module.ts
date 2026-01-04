@@ -8,6 +8,7 @@ import { AuthGuard } from './modules/common/guards/auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { RolesGuard } from './modules/common/guards/roles.guard';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -18,6 +19,11 @@ import { RolesGuard } from './modules/common/guards/roles.guard';
     CommonModule,
     PrismaModule,
     ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    CacheModule.register({
+      ttl: 5000,
+      max: 10,
       isGlobal: true,
     }),
   ],
