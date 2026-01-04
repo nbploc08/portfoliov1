@@ -3,9 +3,6 @@
 Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQL) với RBAC USER/ADMIN, cron cập nhật giá token realtime, cảnh báo giá và cache.
 
 1. Elevator pitch
-
----
-
 -   REST API chuẩn hóa response/error, tài liệu Swagger.
 -   RBAC toàn cục (JWT + RolesGuard) tách PUBLIC/USER/ADMIN.
 -   Dữ liệu giá token đồng bộ từ CoinMarketCap, lưu lịch sử, cache tốc độ cao.
@@ -13,9 +10,6 @@ Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQ
 -   Truy vết giao dịch tài sản qua AssetHistory và transaction Prisma.
 
 2. Tech & kiến trúc
-
----
-
 -   NestJS 11, TypeScript, Swagger.
 -   Prisma ORM + MySQL (`DATABASE_URL`), seed/migrate scripts.
 -   JWT Auth (`JWT_SECRET`, `JWT_EXPIRES_IN`), ValidationPipe whitelist/forbid, HttpExceptionFilter, TransformInterceptor.
@@ -23,9 +17,6 @@ Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQ
 -   Cron: @nestjs/schedule để đồng bộ giá và kích hoạt alert.
 
 3. Cấu trúc chính (backend)
-
----
-
 -   `src/main.ts`: bootstrap, CORS, pipes, filters, interceptors, Swagger `/api`, port `process.env.PORT || 4333`.
 -   `src/app.module.ts`: App composition, global AuthGuard + RolesGuard, global CacheModule.
 -   `modules/user/*`: Auth, portfolios, assets, tokens, price, alerts.
@@ -34,9 +25,6 @@ Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQ
 -   `src/prisma/schema.prisma`: User, Portfolio, Token, TokenPrice, Alert, PortfolioAsset, AssetHistory, enums Role/AlertCondition.
 
 4. Luồng nghiệp vụ tiêu biểu
-
----
-
 -   Đăng ký/Đăng nhập (`/auth/register`, `/auth/login`) -> JWT payload `{id,email,role}`.
 -   USER:
     1. Tạo portfolio (`POST /portfolios`).
@@ -47,42 +35,27 @@ Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQ
     -   CRUD user (`/users`), xem danh mục bất kỳ (`/portfolios/admin/:id`), xem thống kê `/dashboard/stats` (cache 50s).
 
 5. Đồng bộ giá & cache
-
----
-
 -   Cron `*/80 * * * * *`: gọi CoinMarketCap (header `X-CMC_PRO_API_KEY`), bổ sung token mới, lưu `TokenPrice`, đẩy giá vào `PriceCache`.
 -   Cron `EVERY_SECOND`: quét alert chưa trigger, lấy giá mới nhất từng token, đánh dấu triggered khi thỏa điều kiện.
 -   Admin stats cache key `admin:stats` (users/portfolios/alerts/assets), TTL 50s.
 
 6. API quick map
-
----
-
 -   Public: `POST /auth/register`, `POST /auth/login`, `GET /price`, `POST /tokens/create` (seed token).
 -   User (JWT): `/portfolios`, `/asset`, `/alerts`, `/price/:id`, `/tokens`.
 -   Admin (JWT + role ADMIN): `/users`, `/dashboard/stats`.
 
 7. Chuẩn response/error
-
----
-
 -   Success: TransformInterceptor -> `{ success, messageKey, message, data, timestamp }`.
 -   Error: HttpExceptionFilter map HTTP status -> messageKey, trả `{ success:false, messageKey, message, errors?, timestamp }`.
 -   Message templates trong `share/messages.ts` giúp thống nhất localization key.
 
 8. CSDL tóm tắt (Prisma)
-
----
-
 -   User (role: USER/ADMIN) 1-n Portfolio, 1-n Alert.
 -   Portfolio 1-n PortfolioAsset; AssetHistory lưu old/new amount.
 -   Token 1-n TokenPrice (lịch sử giá), 1-n Alert.
 -   Alert: condition GT/LT, targetPrice, isTriggered.
 
 9. Chạy nhanh (dev)
-
----
-
 ```bash
 cd be
 npm install
@@ -94,9 +67,6 @@ npm run start:dev
 Biến môi trường tối thiểu: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `CMC_API_KEY`, optional `PORT`.
 
 10. Điểm nhấn kỹ thuật
-
----
-
 -   RBAC toàn cục bằng APP_GUARD (AuthGuard + RolesGuard).
 -   Cron + external API + cache kết hợp để giảm tải DB và tăng tốc đọc giá.
 -   Transaction khi cập nhật tài sản để đồng bộ AssetHistory.
