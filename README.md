@@ -1,6 +1,6 @@
 # @README – Backend Crypto Portfolio (NestJS)
 
-Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQL) với RBAC USER/ADMIN, cron cập nhật giá token, cảnh báo giá và cache. 
+Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQL) với RBAC USER/ADMIN, cron cập nhật giá token, cảnh báo giá và cache.
 
 1. Elevator pitch
 
@@ -102,8 +102,6 @@ Biến môi trường tối thiểu: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_
 -   Transaction khi cập nhật tài sản để đồng bộ AssetHistory.
 -   Response/error contract thống nhất giúp frontend tiêu thụ dễ dàng.
 
-
-
 ## 11. ERD (mermaid)
 
 ```mermaid
@@ -120,7 +118,7 @@ erDiagram
     string id PK
     string email
     string password
-    enum role  // Role.USER | Role.ADMIN
+    string role
     datetime createdAt
     datetime updatedAt
   }
@@ -135,7 +133,7 @@ erDiagram
 
   TOKEN {
     string id PK
-    string symbol UNIQUE
+    string symbol
     string name
     datetime createdAt
   }
@@ -147,7 +145,6 @@ erDiagram
     float amount
     datetime createdAt
     datetime updatedAt
-    unique portfolioId_tokenId
   }
 
   TOKEN_PRICE {
@@ -161,7 +158,7 @@ erDiagram
     string id PK
     string userId FK
     string tokenId FK
-    enum condition // AlertCondition.GT | AlertCondition.LT
+    string condition
     float targetPrice
     boolean isTriggered
     datetime createdAt

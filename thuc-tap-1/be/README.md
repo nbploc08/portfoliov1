@@ -98,7 +98,7 @@ erDiagram
     string id PK
     string email
     string password
-    enum role
+    string role
     datetime createdAt
     datetime updatedAt
   }
@@ -113,7 +113,7 @@ erDiagram
 
   TOKEN {
     string id PK
-    string symbol UNIQUE
+    string symbol
     string name
     datetime createdAt
   }
@@ -125,7 +125,6 @@ erDiagram
     float amount
     datetime createdAt
     datetime updatedAt
-    unique portfolioId_tokenId
   }
 
   TOKEN_PRICE {
@@ -139,7 +138,7 @@ erDiagram
     string id PK
     string userId FK
     string tokenId FK
-    enum condition
+    string condition
     float targetPrice
     boolean isTriggered
     datetime createdAt
