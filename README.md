@@ -107,6 +107,7 @@ Phân quyền theo vai trò (USER / ADMIN)
 Quản lý biến môi trường theo môi trường chạy
 
 🏗️ Cấu trúc thư mục (rút gọn)
+
 src/
 ├── modules/
 │   ├── common/        # guard, decorator, cache, cron, logging
