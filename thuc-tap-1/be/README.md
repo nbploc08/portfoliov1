@@ -98,7 +98,7 @@ erDiagram
     string id PK
     string email
     string password
-    enum role  // Role.USER | Role.ADMIN
+    enum role
     datetime createdAt
     datetime updatedAt
   }
@@ -139,7 +139,7 @@ erDiagram
     string id PK
     string userId FK
     string tokenId FK
-    enum condition // AlertCondition.GT | AlertCondition.LT
+    enum condition
     float targetPrice
     boolean isTriggered
     datetime createdAt
