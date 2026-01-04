@@ -1,6 +1,6 @@
 # @README – Backend Crypto Portfolio (NestJS)
 
-Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQL) với RBAC USER/ADMIN, cron cập nhật giá token, cảnh báo giá và cache.
+Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQL) với RBAC USER/ADMIN, cron cập nhật giá token realtime, cảnh báo giá và cache.
 
 1. Elevator pitch
 
