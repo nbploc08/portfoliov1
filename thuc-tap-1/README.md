@@ -1,102 +1,103 @@
-# 🏪 MiniShop
+# @README – Backend Crypto Portfolio (NestJS)
 
-Đồ án website quản lý cửa hàng tạp hóa mini
+Dự án backend quản lý danh mục đầu tư crypto (NestJS + Prisma + MySQL) với RBAC USER/ADMIN, cron cập nhật giá token, cảnh báo giá và cache. Tài liệu này tối ưu cho portfolio nộp CV.
 
-## 📋 Mô tả dự án
+1. Elevator pitch
 
-MiniShop là một ứng dụng web fullstack được xây dựng để quản lý cửa hàng tạp hóa mini:
+---
 
-- **Frontend**: Next.js với TypeScript, Tailwind CSS + SCSS
-- **Backend**: NestJS với TypeScript, Swagger UI
-- **Features**: Server-Side Rendering, SEO-optimized
+-   REST API chuẩn hóa response/error, tài liệu Swagger.
+-   RBAC toàn cục (JWT + RolesGuard) tách PUBLIC/USER/ADMIN.
+-   Dữ liệu giá token đồng bộ từ CoinMarketCap, lưu lịch sử, cache tốc độ cao.
+-   Cảnh báo giá tự động bằng cron, ghi nhận trạng thái triggered.
+-   Truy vết giao dịch tài sản qua AssetHistory và transaction Prisma.
 
-## 📁 Cấu trúc dự án
+2. Tech & kiến trúc
 
-```
-minishop/
-├── fe/                    # Frontend - Next.js TypeScript
-│   ├── src/app/          # App Router pages
-│   ├── src/styles/       # SCSS variables & mixins
-│   ├── src/utils/        # Constants & utilities
-│   └── next.config.ts    # Next.js configuration
-└── be/                    # Backend - NestJS
-    ├── src/modules/      # User, Admin, Common modules
-    └── src/main.ts       # Entry point với Swagger
-```
+---
 
-## 🛠️ Yêu cầu hệ thống
+-   NestJS 11, TypeScript, Swagger.
+-   Prisma ORM + MySQL (`DATABASE_URL`), seed/migrate scripts.
+-   JWT Auth (`JWT_SECRET`, `JWT_EXPIRES_IN`), ValidationPipe whitelist/forbid, HttpExceptionFilter, TransformInterceptor.
+-   Cache: cache-manager (admin stats) + in-memory PriceCache (giá mới nhất).
+-   Cron: @nestjs/schedule để đồng bộ giá và kích hoạt alert.
 
-- **Node.js**: >= 16.x
-- **npm**: >= 8.x hoặc **yarn**: >= 1.22.x
+3. Cấu trúc chính (backend)
 
-## 🚀 Hướng dẫn cài đặt và chạy dự án
+---
 
-### 1. Clone repository
+-   `src/main.ts`: bootstrap, CORS, pipes, filters, interceptors, Swagger `/api`, port `process.env.PORT || 4333`.
+-   `src/app.module.ts`: App composition, global AuthGuard + RolesGuard, global CacheModule.
+-   `modules/user/*`: Auth, portfolios, assets, tokens, price, alerts.
+-   `modules/admin/*`: Users CRUD (admin), dashboard stats (cache).
+-   `modules/common/*`: decorators, guards, cache, axios (CMC), cron.
+-   `src/prisma/schema.prisma`: User, Portfolio, Token, TokenPrice, Alert, PortfolioAsset, AssetHistory, enums Role/AlertCondition.
+
+4. Luồng nghiệp vụ tiêu biểu
+
+---
+
+-   Đăng ký/Đăng nhập (`/auth/register`, `/auth/login`) -> JWT payload `{id,email,role}`.
+-   USER:
+    1. Tạo portfolio (`POST /portfolios`).
+    2. Thêm/mua/bán tài sản (`POST /asset`, `DELETE /asset`) với kiểm tra quyền sở hữu, lưu AssetHistory.
+    3. Xem giá: `GET /price` (cache nhanh), `GET /price/:id` (DB mới nhất).
+    4. Tạo alert (`POST /alerts`), cron so sánh giá và set `isTriggered=true` khi đạt điều kiện GT/LT.
+-   ADMIN:
+    -   CRUD user (`/users`), xem danh mục bất kỳ (`/portfolios/admin/:id`), xem thống kê `/dashboard/stats` (cache 50s).
+
+5. Đồng bộ giá & cache
+
+---
+
+-   Cron `*/80 * * * * *`: gọi CoinMarketCap (header `X-CMC_PRO_API_KEY`), bổ sung token mới, lưu `TokenPrice`, đẩy giá vào `PriceCache`.
+-   Cron `EVERY_SECOND`: quét alert chưa trigger, lấy giá mới nhất từng token, đánh dấu triggered khi thỏa điều kiện.
+-   Admin stats cache key `admin:stats` (users/portfolios/alerts/assets), TTL 50s.
+
+6. API quick map
+
+---
+
+-   Public: `POST /auth/register`, `POST /auth/login`, `GET /price`, `POST /tokens/create` (seed token).
+-   User (JWT): `/portfolios`, `/asset`, `/alerts`, `/price/:id`, `/tokens`.
+-   Admin (JWT + role ADMIN): `/users`, `/dashboard/stats`.
+
+7. Chuẩn response/error
+
+---
+
+-   Success: TransformInterceptor -> `{ success, messageKey, message, data, timestamp }`.
+-   Error: HttpExceptionFilter map HTTP status -> messageKey, trả `{ success:false, messageKey, message, errors?, timestamp }`.
+-   Message templates trong `share/messages.ts` giúp thống nhất localization key.
+
+8. CSDL tóm tắt (Prisma)
+
+---
+
+-   User (role: USER/ADMIN) 1-n Portfolio, 1-n Alert.
+-   Portfolio 1-n PortfolioAsset; AssetHistory lưu old/new amount.
+-   Token 1-n TokenPrice (lịch sử giá), 1-n Alert.
+-   Alert: condition GT/LT, targetPrice, isTriggered.
+
+9. Chạy nhanh (dev)
+
+---
 
 ```bash
-git clone <repository-url>
-cd minishop
+cd be
+npm install
+npm run db:generate && npm run db:migrate   # Prisma client + migrate
+npm run start:dev
+# Swagger: http://localhost:4333/api
 ```
 
-### 2. Cài đặt và chạy Backend
+Biến môi trường tối thiểu: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `CMC_API_KEY`, optional `PORT`.
 
-| **npm**              | **yarn**          |
-| -------------------- | ----------------- |
-| `cd be`              | `cd be`           |
-| `npm install`        | `yarn install`    |
-| `npm run start:dev`  | `yarn start:dev`  |
-| `npm run build`      | `yarn build`      |
-| `npm run start:prod` | `yarn start:prod` |
+10. Điểm nhấn kỹ thuật
 
-**Backend chạy trên:** `http://localhost:4301`  
-**Swagger API:** `http://localhost:4301/api`
+---
 
-### 3. Cài đặt và chạy Frontend
-
-| **npm**         | **yarn**       |
-| --------------- | -------------- |
-| `cd fe`         | `cd fe`        |
-| `npm install`   | `yarn install` |
-| `npm run dev`   | `yarn dev`     |
-| `npm run build` | `yarn build`   |
-| `npm start`     | `yarn start`   |
-
-**Frontend chạy trên:** `http://localhost:4300`
-
-## 🔧 Scripts chính
-
-### Frontend
-
-| **npm**         | **yarn**     | **Mô tả**                        |
-| --------------- | ------------ | -------------------------------- |
-| `npm run dev`   | `yarn dev`   | Development server với Turbopack |
-| `npm run build` | `yarn build` | Build cho production             |
-| `npm start`     | `yarn start` | Chạy production server           |
-| `npm run lint`  | `yarn lint`  | Lint code với ESLint             |
-
-### Backend
-
-| **npm**             | **yarn**         | **Mô tả**                  |
-| ------------------- | ---------------- | -------------------------- |
-| `npm run start:dev` | `yarn start:dev` | Development với hot reload |
-| `npm run start`     | `yarn start`     | Production mode            |
-| `npm run build`     | `yarn build`     | Build TypeScript           |
-| `npm run lint`      | `yarn lint`      | Lint code                  |
-
-## 📱 Truy cập ứng dụng
-
-- **Frontend**: http://localhost:4300 (Giao diện người dùng)
-- **Backend API**: http://localhost:4301 (API endpoints)
-- **Swagger Documentation**: http://localhost:4301/api
-
-## 🛣️ Routes
-
-- `/` → Trang chủ user
-- `/admin` → Admin dashboard
-- API endpoints: `/user/home`, `/admin/dashboard`, `/common/share`
-
-## 📝 Ghi chú
-
-- **Ports**: Frontend (4300), Backend (4301)
-- **Package Manager**: Có thể dùng npm hoặc yarn (không trộn lẫn)
-- **Development**: Yarn thường nhanh hơn và cache tốt hơn
+-   RBAC toàn cục bằng APP_GUARD (AuthGuard + RolesGuard).
+-   Cron + external API + cache kết hợp để giảm tải DB và tăng tốc đọc giá.
+-   Transaction khi cập nhật tài sản để đồng bộ AssetHistory.
+-   Response/error contract thống nhất giúp frontend tiêu thụ dễ dàng.
